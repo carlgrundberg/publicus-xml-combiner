@@ -46,8 +46,7 @@ fs.readdir(dir, function (err, files) {
         var file = files[i];
         if (path.extname(file) === ".xml") {
             console.log(file);
-            var input = iconv.decode(fs.readFileSync(dir + file), 'win1252');
-            input.replace('<?xml version="1.0" encoding="windows-1252"?>', '');
+            var input = iconv.decode(fs.readFileSync(dir + file), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', '');
             var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
             if (tax) {
                 for (var j = 0; j < sites.length; j++) {
