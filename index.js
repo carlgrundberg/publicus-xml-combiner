@@ -1,8 +1,24 @@
 var iconv = require('iconv-lite');
 var fs = require('fs');
 var path = require("path");
-var indir = 'F:/pubarchive/2014_Jan-July/';
-var outdir = 'F:/pubarchive_combined/2014_Jan-July/';
+var args = process.argv.slice(2);
+
+if(args.length < 2) {
+    console.log('Please specify input and output directories.');
+    return;
+}
+var indir = args[0];
+var outdir = args[1];
+
+if(!fs.lstatSync(indir).isDirectory()) {
+    console.log('Input directoy does not exist!', indir);
+    return;
+}
+
+if(!fs.lstatSync(outdir).isDirectory()) {
+    console.log('Output directoy does not exist!', outdir);
+    return;
+}
 
 var sites = [
     {
