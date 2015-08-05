@@ -1,6 +1,8 @@
 var iconv = require('iconv-lite');
 var fs = require('fs');
 var path = require("path");
+var Entities = require('html-entities').XmlEntities;
+var entities = new Entities();
 var args = process.argv.slice(2);
 
 if(args.length < 2) {
@@ -63,7 +65,7 @@ fs.readdir(indir, function (err, files) {
         var file = files[i];
         if (path.extname(file) === ".xml") {
             console.log(file);
-            var input = iconv.decode(fs.readFileSync(indir + file), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', '');
+            var input = entities.decode(iconv.decode(fs.readFileSync(indir + file), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', ''));
             var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
             if (tax) {
                 for (var j = 0; j < sites.length; j++) {
