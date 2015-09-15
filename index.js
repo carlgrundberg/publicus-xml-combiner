@@ -4,7 +4,6 @@ var path = require("path");
 var Entities = require('html-entities').XmlEntities;
 var entities = new Entities();
 var args = process.argv.slice(2);
-var xmlChecker = require('xmlChecker');
 var DOMParser = require('xmldom').DOMParser;
 
 if (args.length < 2) {
