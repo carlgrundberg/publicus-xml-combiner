@@ -4,20 +4,21 @@ var path = require("path");
 var Entities = require('html-entities').XmlEntities;
 var entities = new Entities();
 var args = process.argv.slice(2);
+var xmlChecker = require('xmlChecker');
 
-if(args.length < 2) {
+if (args.length < 2) {
     console.log('Please specify input and output directories.');
     return;
 }
 var indir = args[0];
 var outdir = args[1];
 
-if(!fs.lstatSync(indir).isDirectory()) {
+if (!fs.lstatSync(indir).isDirectory()) {
     console.log('Input directoy does not exist!', indir);
     return;
 }
 
-if(!fs.lstatSync(outdir).isDirectory()) {
+if (!fs.lstatSync(outdir).isDirectory()) {
     console.log('Output directoy does not exist!', outdir);
     return;
 }
@@ -54,6 +55,18 @@ function fileheader(site) {
 function filefooter(site) {
     var out = site.out;
     out.write('</articles>\n');
+    out.end();
+    out.on('finish', function () {
+        try {
+            var file = outdir + site.name + '.xml';
+            console.log('Checking', file);
+            xmlChecker.check(fs.readFileSync(file, 'utf8'));
+            console.log('XML OK');
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
 }
 
 fs.readdir(indir, function (err, files) {
@@ -66,6 +79,9 @@ fs.readdir(indir, function (err, files) {
         if (path.extname(file) === ".xml") {
             console.log(file);
             var input = entities.decode(iconv.decode(fs.readFileSync(indir + file), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', ''));
+            // Replace double CDATA
+            input = input.replace(/(\<\!\[CDATA\[.*)\<\!\[CDATA\[(.*)\]\]\>(.*\]\]\>)/g, '$1$2$3');
+
             var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
             if (tax) {
                 for (var j = 0; j < sites.length; j++) {
