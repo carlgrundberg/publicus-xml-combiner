@@ -5,6 +5,7 @@ var Entities = require('html-entities').XmlEntities;
 var entities = new Entities();
 var args = process.argv.slice(2);
 var xmlChecker = require('xmlChecker');
+var DOMParser = require('xmldom').DOMParser;
 
 if (args.length < 2) {
     console.log('Please specify input and output directories.');
@@ -57,15 +58,8 @@ function filefooter(site) {
     out.write('</articles>\n');
     out.end();
     out.on('finish', function () {
-        try {
-            var file = outdir + site.name + '.xml';
-            console.log('Checking', file);
-            xmlChecker.check(fs.readFileSync(file, 'utf8'));
-            console.log('XML OK');
-        }
-        catch (error) {
-            console.log(error);
-        }
+        var file = outdir + site.name + '.xml';
+        doc = new DOMParser().parseFromString(file, 'text/xml');
     });
 }
 
