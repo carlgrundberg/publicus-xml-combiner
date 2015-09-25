@@ -73,7 +73,9 @@ fs.readdir(indir, function (err, files) {
             console.log(file);
             var input = entities.decode(iconv.decode(fs.readFileSync(indir + file), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', ''));
             // Replace double CDATA
-            input = input.replace(/(\<\!\[CDATA\[.*)\<\!\[CDATA\[(.*)\]\]\>(.*\]\]\>)/g, '$1$2$3');
+
+            input = input.replace(/<script[\s\S]*?<\/script>/g, '');
+            //input = input.replace(/(\<\!\[CDATA\[.*)\<\!\[CDATA\[(.*)\]\]\>(.*\]\]\>)/g, '$1$2$3');
 
             var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
             if (tax) {
