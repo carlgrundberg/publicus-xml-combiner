@@ -77,6 +77,7 @@ function bundle(dir) {
                 input = input.replace(/<ExtLinkURI>[^<]*<\/ExtLinkURI>/g, '');
                 input = input.replace(/<b>([^<]*<\/b[^>])/ig, '$1');
                 input = input.replace(/<br>/ig, '<br/>');
+                input = input.replace(/<byline>(.*)[\s\S]*<\/byline>/ig, '<byline><![CDATA[$1]]></byline>');
                 var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
                 if (tax) {
                     for (var j = 0; j < sites.length; j++) {
@@ -93,7 +94,7 @@ function bundle(dir) {
             }
         }
 
-        console.log('Number of articles appended for each site');
+        console.log(absDir + ' Number of articles appended for each site');
         for (j = 0; j < sites.length; j++) {
             site = sites[j];
             console.log(site.name + ':' + counts[j]);
