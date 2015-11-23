@@ -25,10 +25,6 @@ if (!fs.statSync(outdir).isDirectory()) {
 
 var sites = [
     {
-        name: 'skd',
-        tax: ['Skånska Dagbladet', 'Lund', 'Malmö', 'Burlöv', 'Eslöv', 'Hörby', 'Kävlinge', 'Landskrona', 'Lomma', 'Nordost', 'Sjöbo', 'Svedala', 'Svalöv', 'Trelleborg', 'Vellinge', 'Ystad', 'Höör', 'Arlöv', 'Åkarp', 'Helsingborg', 'Bjuv', 'Klippan', 'Ängelholm', 'Örkelljunga', 'Åstorp', 'Dalby', 'Genarp', 'Södra Sandby', 'Veberöd', 'Blentarp', 'Veberöd', 'Vollsjö', 'Kivik', 'Simrishamn', 'Tomelilla'],
-    },
-    {
         name: 'nsk',
         tax: ['Norra Skåne', 'Hässleholm', 'Bjärnum', 'Hästveda', 'Tyringe', 'Vankiva', 'Vinslöv', 'Vittsjö', 'Kristianstad', 'Arkelstorp', 'Bromölla', 'Tollarp', 'Åhus', 'Markaryd', 'Osby', 'Perstorp', 'Östra Göinge', 'Broby', 'Hanaskog', 'Knislinge'],
     },
@@ -52,78 +48,75 @@ function filefooter(site, out, currentOutDir) {
     });
 }
 
-function bundle(dir) {
-    var absDir = path.join(indir, dir);
-    console.log("bundling", absDir);
-    fs.readdir(absDir, function (err, files) {
-        if (err) throw err;
-
-        var out = [];
-        var counts = [];
-        var currentOutDir = path.join(outdir, dir);
-
-        sites.forEach(function(site, i) {
-            out[i] = fs.createOutputStream(path.join(currentOutDir, site.name + '.xml'));
-            counts[i] = 0;
-            fileheader(site, out[i]);
-        });
-
-        for (var i = 0; i < files.length; i++) {
-            var file = files[i];
-            if (path.extname(file) === ".xml") {
-                var input = entities.decode(iconv.decode(fs.readFileSync(path.join(absDir,file)), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', ''));
-                input = input.replace(/<script[\s\S]*?<\/script>/g, '');
-                //input = input.replace(/(\<\!\[CDATA\[.*)\<\!\[CDATA\[(.*)\]\]\>(.*\]\]\>)/g, '$1$2$3');
-                input = input.replace(/<ExtLinkURI>[^<]*<\/ExtLinkURI>/g, '');
-                input = input.replace(/<b>([^<]*<\/b[^>])/ig, '$1');
-                input = input.replace(/<br>/ig, '<br/>');
-                input = input.replace(/<byline>(.*)[\s\S]*<\/byline>/ig, '<byline><![CDATA[$1]]></byline>');
-                var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
-                if (tax) {
-                    for (var j = 0; j < sites.length; j++) {
-                        var site = sites[j];
-                        for (var k = 0; k < site.tax.length; k++) {
-                            if (tax[1].indexOf(site.tax[k]) != -1) {
-                                out[j].write(input);
-                                counts[j]++;
-                                break;
-                            }
-                        }
+function bundleFile(file) {
+    if (path.extname(file) === ".xml") {
+        var input = entities.decode(iconv.decode(fs.readFileSync(file), 'win1252').replace('<?xml version="1.0" encoding="windows-1252"?>', ''));
+        input = input.replace(/<script[\s\S]*?<\/script>/g, '');
+        //input = input.replace(/(\<\!\[CDATA\[.*)\<\!\[CDATA\[(.*)\]\]\>(.*\]\]\>)/g, '$1$2$3');
+        input = input.replace(/<ExtLinkURI>[^<]*<\/ExtLinkURI>/g, '');
+        input = input.replace(/<b>([^<]*<\/b[^>])/ig, '$1');
+        input = input.replace(/<br>/ig, '<br/>');
+        input = input.replace(/<byline>(.*)[\s\S]*<\/byline>/ig, '<byline><![CDATA[$1]]></byline>');
+        var tax = input.match(/<taxonomytext><\!\[CDATA\[(.*)\]\]><\/taxonomytext>/);
+        if (tax) {
+            for (var j = 0; j < sites.length; j++) {
+                var site = sites[j];
+                for (var k = 0; k < site.tax.length; k++) {
+                    if (tax[1].indexOf(site.tax[k]) != -1) {
+                        out[j].write(input);
+                        counts[j]++;
+                        break;
                     }
                 }
             }
         }
-
-        console.log(absDir + ' Number of articles appended for each site');
-        for (j = 0; j < sites.length; j++) {
-            site = sites[j];
-            console.log(site.name + ':' + counts[j]);
-        }
-        sites.forEach(function(site, i) {
-            filefooter(site, out[i], currentOutDir);
-        });
-    });
+    }
 }
 
 function readDir(dir) {
     var absDir = path.join(indir, dir);
-    fs.readdir(absDir, function (err, files) {
-        if (err) throw err;
+    var files = fs.readdirSync(absDir);
 
-        for (var i = 0; i < files.length; i++) {
-            file = path.join(dir, files[i]);
-            var stat = fs.statSync(path.join(indir, file));
-            if(stat.isDirectory()) {
-                readDir(file);
-            }
-            if (path.extname(file) === ".xml") {
-                bundle(dir);
-                break;
-            }
+    for (var i = 0; i < files.length; i++) {
+        file = path.join(dir, files[i]);
+        var stat = fs.statSync(path.join(indir, file));
+        if (stat.isDirectory()) {
+            readDir(file);
         }
+        if (path.extname(file) === ".xml") {
+            bundleFile(path.join(indir, file));
+        }
+    }
+}
+
+var out = [];
+var counts = [];
+
+function bundle(dir) {
+    var absDir = path.join(indir, dir);
+    console.log("bundling", absDir);
+
+    sites.forEach(function (site, i) {
+        out[i] = fs.createOutputStream(path.join(outdir, site.name + '.xml'));
+        counts[i] = 0;
+        fileheader(site, out[i]);
+    });
+
+    readDir(dir);
+
+    console.log(absDir + ' Number of articles appended for each site');
+    for (j = 0; j < sites.length; j++) {
+        site = sites[j];
+        console.log(site.name + ':' + counts[j]);
+    }
+    sites.forEach(function (site, i) {
+        filefooter(site, out[i], outdir);
     });
 }
 
-readDir(".");
+
+//readDir(".");
+
+bundle(".");
 
 
